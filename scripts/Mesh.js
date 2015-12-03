@@ -7,7 +7,6 @@ function initDisplay() {
 function initEvents() {
     $('#mainCanvas').live('mousedown', function(e) {
         var offset = $('#mainCanvas').offset();
-        console.log(offset);
         window.canvas.mousedown(e.pageX - offset.left, e.pageY - offset.top);
     });
 

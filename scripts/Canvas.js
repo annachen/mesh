@@ -6,6 +6,8 @@ function Canvas(id) {
     this.canvasId = id;
     this.ctx = $('#' + id)[0].getContext('2d');
     this.drawMode = false;
+    
+    this.path = new Array();
 
     this.setSize = function(w, h) {
         This.width = w;
@@ -26,14 +28,29 @@ function Canvas(id) {
 
     this.mousedown = function(x, y) {
         This.drawMode = true;
+        This.ctx.beginPath();
+        This.ctx.moveTo(x, y);
+        This.path = new Array();
+        This.path.push(Point(x, y));
     }
 
     this.mouseup = function(x, y) {
-        This.drawMode = false;
+        if (This.drawMode) {
+            This.drawMode = false;
+            This.smoothPath();
+        }
     }
 
     this.mousemove = function(x, y) {
-        
+        if (This.drawMode) {
+            This.ctx.lineTo(x, y);
+            This.path.push(Point(x, y));
+            This.ctx.stroke();
+        }
+    }
+
+    this.smoothPath = function() {
+        // TODO: make curve smoother, especially when two points are far away
     }
 
 }
