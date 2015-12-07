@@ -48,10 +48,10 @@ canvas#mainCanvas {
 div#toolsPane {
     float: left;
     display: block;
-    width: 30px;
-    height: 30px;
+    width: 100px;
+    height: 100px;
     position: absolute;
     left: 3px;
-    right: 3px;
+    top: 3px;
     border: solid 1px blue;
 }

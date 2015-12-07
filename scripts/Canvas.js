@@ -26,6 +26,10 @@ function Canvas(id) {
         $('#' + This.canvasId).attr('height', This.height);
     }
 
+    this.clearAll = function() {
+        This.ctx.clearRect(0, 0, This.width, This.height);
+    }
+
     this.mousedown = function(x, y) {
         This.drawMode = true;
         This.ctx.beginPath();
