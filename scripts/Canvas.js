@@ -1,7 +1,7 @@
 
 function Canvas(id) {
     
-    var This = this;
+    var self = this;
     
     this.canvasId = id;
     this.ctx = $('#' + id)[0].getContext('2d');
@@ -10,46 +10,46 @@ function Canvas(id) {
     this.path = new Array();
 
     this.setSize = function(w, h) {
-        This.width = w;
-        This.height = h;
+        self.width = w;
+        self.height = h;
         this.updateCanvasDisplaySize();
     }
 
     this.initCanvasSize = function() {
-        This.width = $('#middlePane').innerWidth();
-        This.height = $('#middlePane').innerHeight();
+        self.width = $('#middlePane').innerWidth();
+        self.height = $('#middlePane').innerHeight();
         this.updateCanvasDisplaySize();
     }
 
     this.updateCanvasDisplaySize = function() {
-        $('#' + This.canvasId).attr('width', This.width);
-        $('#' + This.canvasId).attr('height', This.height);
+        $('#' + self.canvasId).attr('width', self.width);
+        $('#' + self.canvasId).attr('height', self.height);
     }
 
     this.clearAll = function() {
-        This.ctx.clearRect(0, 0, This.width, This.height);
+        self.ctx.clearRect(0, 0, self.width, self.height);
     }
 
     this.mousedown = function(x, y) {
-        This.drawMode = true;
-        This.ctx.beginPath();
-        This.ctx.moveTo(x, y);
-        This.path = new Array();
-        This.path.push(Point(x, y));
+        self.drawMode = true;
+        self.ctx.beginPath();
+        self.ctx.moveTo(x, y);
+        self.path = new Array();
+        self.path.push(Point(x, y));
     }
 
     this.mouseup = function(x, y) {
-        if (This.drawMode) {
-            This.drawMode = false;
-            This.smoothPath();
+        if (self.drawMode) {
+            self.drawMode = false;
+            self.smoothPath();
         }
     }
 
     this.mousemove = function(x, y) {
-        if (This.drawMode) {
-            This.ctx.lineTo(x, y);
-            This.path.push(Point(x, y));
-            This.ctx.stroke();
+        if (self.drawMode) {
+            self.ctx.lineTo(x, y);
+            self.path.push(Point(x, y));
+            self.ctx.stroke();
         }
     }
 
