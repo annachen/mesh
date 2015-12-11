@@ -1,19 +1,18 @@
 
 function initDisplay() {
 
-    window.modes = Object.freeze({
-        'draw': 1,
-        'animate': 2
-    });
-
+    window.modeManager = new ModeManager();
     window.canvas = new Canvas('mainCanvas');
     window.canvas.initCanvasSize();
     window.tools = new Tools('toolsPane');
-
-    window.mode = window.modes.animate;
 }
 
 function initEvents() {
+    
+    $(window).keydown(function(event) {
+        window.modeManager.keydown(event.which);
+    });
+    
     $('#mainCanvas').live('mousedown', function(e) {
         if (window.tools.pressed) {
             // stop tools holding action first
