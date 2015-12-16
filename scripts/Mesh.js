@@ -4,6 +4,7 @@ function initDisplay() {
     window.modeManager = new ModeManager();
     window.canvas = new Canvas('mainCanvas');
     window.canvas.initCanvasSize();
+    window.canvas.reset();
     window.tools = new Tools('toolsPane');
 }
 

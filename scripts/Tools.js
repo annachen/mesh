@@ -11,7 +11,7 @@ function Tools(id) {
 
     // enum of tools
     this.tools = Object.freeze({
-        "clearAll": 1
+        "resetCanvas": 1
     });
 
     this.id = id;
@@ -21,7 +21,7 @@ function Tools(id) {
     this.pressedTime = null;
 
     // only have one now
-    this.currentMode = this.tools.clearAll;
+    this.currentMode = this.tools.resetCanvas;
 
     this.mousedown = function(x, y) {
         self.pressed = true;
@@ -38,7 +38,7 @@ function Tools(id) {
             if (dx < 10 && dy < 10) {
                 // if not much movement, judge as a single click
                 // TODO(anna): make this a function make based on current mode
-                self.clearAll();
+                self.resetCanvas();
             }
             self.pressed = false;
             self.pressedPoint = null;
@@ -74,7 +74,7 @@ function Tools(id) {
         console.log('expanded');
     }
 
-    this.clearAll = function() {
-        window.canvas.clearAll();
+    this.resetCanvas = function() {
+        window.canvas.reset();
     }
 }
