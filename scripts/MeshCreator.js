@@ -5,6 +5,8 @@ function Triangle(p1, p2, p3) {
     this.points = [p1, p2, p3];
     this.adjTris = null;
 
+    this.drawStyle = '#ff7700';
+
     this.adjacentTo = function(triX) {
         if (self.adjTris == null) {
             self.adjTris = new Array();
@@ -18,15 +20,46 @@ function Triangle(p1, p2, p3) {
 
     this.draw = function(style) {
         var ctx = window.canvas.ctx;
+        if (style == null)
+            style = self.drawStyle;
         ctx.strokeStyle = style;
         ctx.beginPath()
         ctx.moveTo(self.points[0].x, self.points[0].y);
         ctx.lineTo(self.points[1].x, self.points[1].y);
-        ctx.stroke()
+        ctx.stroke();
         ctx.lineTo(self.points[2].x, self.points[2].y);
-        ctx.stroke()
-        ctx.closePath()
-        ctx.stroke()
+        ctx.stroke();
+        ctx.closePath();
+        ctx.stroke();
+    }
+}
+
+
+function LineSeg(p0, p1) {
+    var self = this;
+    this.p0 = p0;
+    this.p1 = p1;
+    this.ori = new Point(p1.y - p0.y, p0.x - p1.x);
+    this.drawStyle = '#22222ee'
+
+    this.equals = function(seg) {
+        if (self.p0.equals(seg.p0) && self.p1.equals(seg.p1)) return true;
+        if (self.p0.equals(seg.p1) && self.p1.equals(seg.p0)) return true;
+        return false;
+    }
+
+    this.draw = function(style) {
+        var ctx = window.canvas.ctx;
+        if (style == null) {
+            style = self.drawStyle;
+        }
+        ctx.strokeStyle = style;
+        ctx.beginPath();
+        ctx.moveTo(self.p0.x, self.p0.y);
+        ctx.lineTo(self.p1.x, self.p1.y);
+        ctx.stroke();
+        self.p0.draw('#dddddd');
+        self.p1.draw('#000000');
     }
 }
 
@@ -110,6 +143,8 @@ function Triangulation() {
     this.edgeSize = 20;
     this.height = this.edgeSize / 2 * Math.sqrt(3);
 
+    this.mesh = null;
+
     this.toMeshNaive = function(shape) {
         // A shape should be a contour consists of a list of points.
         // If the first point is not equal to the last, one line will be drawn 
@@ -144,13 +179,78 @@ function Triangulation() {
         seed.draw();
 
         // Now grow triangles from seed
-        var triangles = new Array();
+        self.mesh = new Array();
         var seedTri = new Triangle(
             new Point(seed.x, seed.y - self.height/2.0),
-            new Point((seed.x - self.edgeSize/2.0), seed.y + self.height/2.0),
-            new Point((seed.x + self.edgeSize/2.0), seed.y + self.height/2.0)
+            new Point((seed.x + self.edgeSize/2.0), seed.y + self.height/2.0),
+            new Point((seed.x - self.edgeSize/2.0), seed.y + self.height/2.0)
         )
         seedTri.draw();
+        self.mesh.push(seedTri);
+
+        var edgeToGrow = new Array();
+        var seenEdges = new Array();
+
+        // always have the edge in the clockwise order
+        edgeToGrow.push(new LineSeg(seedTri.points[0], seedTri.points[1]));
+        edgeToGrow.push(new LineSeg(seedTri.points[1], seedTri.points[2]));
+        edgeToGrow.push(new LineSeg(seedTri.points[2], seedTri.points[0]));
+        seenEdges.push(edgeToGrow[0]);
+        seenEdges.push(edgeToGrow[1]);
+        seenEdges.push(edgeToGrow[2]);
+        var count = 0;
+        while (edgeToGrow.length > 0 && count < 500) {
+            var curEdge = edgeToGrow[0];
+            curEdge.draw();
+            edgeToGrow.shift();
+            var newPt = self.getThridPoint(curEdge);
+            if (!pointInShape(newPt, shape)) {
+                continue;
+            }
+            var newTri = new Triangle(curEdge.p0, newPt, curEdge.p1);
+            var line0 = new LineSeg(curEdge.p0, newPt);
+            var line1 = new LineSeg(newPt, curEdge.p1);
+            for (var i=0;i<seenEdges.length;i++) {
+                // (TODO) Make this fast
+                if (seenEdges[i].equals(line0)) {
+                    line0 = null
+                    console.log('skipping linie0')
+                    break;
+                }
+            }
+            for (var i=0;i<seenEdges.length;i++) {
+                // (TODO) Make this fast
+                if (seenEdges[i].equals(line1)) {
+                    line1 = null
+                    console.log('skipping linie1')
+                    break;
+                }
+            }
+            if (line0 != null) {
+                edgeToGrow.push(line0);
+                seenEdges.push(line0);
+            }
+            if (line1 != null) {
+                edgeToGrow.push(line1);
+                seenEdges.push(line1);
+            }
+            if (line0 != null ||line1 != null) {
+                self.mesh.push(newTri);
+                newTri.draw();
+            }
+            count ++;
+        }
+        console.log(self.mesh.length);
+    }
+
+    this.sqrt3 = Math.sqrt(3);
+
+    this.getThridPoint = function(line) {
+        var midx = (line.p0.x + line.p1.x) / 2.0;
+        var midy = (line.p0.y + line.p1.y) / 2.0;
+        var orix = (line.p1.y - line.p0.y) / 2.0 * self.sqrt3;
+        var oriy = (line.p0.x - line.p1.x) / 2.0 * self.sqrt3;
+        return new Point(midx + orix, midy + oriy);
     }
 }
 
