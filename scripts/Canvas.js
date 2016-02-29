@@ -81,6 +81,7 @@ function Canvas(id) {
             self.path.endContour();
             // TODO: better flow to converto to mesh
             self.mc.shapeToMeshNaive(self.path);
+            self.mc.drawNaiveMesh();
         }
     }
 
@@ -98,7 +99,3 @@ function Canvas(id) {
 
 }
 
-$(function() {
-    window.canvas = new Canvas('mainCanvas');
-    window.canvas.initCanvasSize();
-});

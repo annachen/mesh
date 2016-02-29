@@ -1,120 +1,4 @@
 
-function Triangle(p1, p2, p3) {
-    var self = this;
-
-    this.points = [p1, p2, p3];
-    this.adjTris = null;
-
-    this.drawStyle = '#ff7700';
-
-    this.adjacentTo = function(triX) {
-        if (self.adjTris == null) {
-            self.adjTris = new Array();
-        }
-        self.adjTris.push(triX);
-    }
-
-    this.copy = function() {
-        return Triangle(self.points[0], self.points[1], self.points[2]);
-    }
-
-    this.draw = function(style) {
-        var ctx = window.canvas.ctx;
-        if (style == null)
-            style = self.drawStyle;
-        ctx.strokeStyle = style;
-        ctx.beginPath()
-        ctx.moveTo(self.points[0].x, self.points[0].y);
-        ctx.lineTo(self.points[1].x, self.points[1].y);
-        ctx.stroke();
-        ctx.lineTo(self.points[2].x, self.points[2].y);
-        ctx.stroke();
-        ctx.closePath();
-        ctx.stroke();
-    }
-}
-
-
-function LineSeg(p0, p1) {
-    var self = this;
-    this.p0 = p0;
-    this.p1 = p1;
-    this.ori = new Point(p1.y - p0.y, p0.x - p1.x);
-    this.drawStyle = '#22222ee'
-
-    this.equals = function(seg) {
-        if (self.p0.equals(seg.p0) && self.p1.equals(seg.p1)) return true;
-        if (self.p0.equals(seg.p1) && self.p1.equals(seg.p0)) return true;
-        return false;
-    }
-
-    this.draw = function(style) {
-        var ctx = window.canvas.ctx;
-        if (style == null) {
-            style = self.drawStyle;
-        }
-        ctx.strokeStyle = style;
-        ctx.beginPath();
-        ctx.moveTo(self.p0.x, self.p0.y);
-        ctx.lineTo(self.p1.x, self.p1.y);
-        ctx.stroke();
-        self.p0.draw('#dddddd');
-        self.p1.draw('#000000');
-    }
-}
-
-
-function adjacent(triX, triY) {
-    triX.adjacentTo(triY);
-    triY.adjacentTo(triX);
-}
-
-
-function _orientation(p, q, r) {
-    var val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
-    if (epsEquals(val, 0, 0.0001)) {
-        return null;
-    }
-    if (val > 0) return 1;
-    return -1;
-}
-
-
-function intersects(p1, q1, p2, q2) {
-    var p1q1p2 = _orientation(p1, q1, p2);
-    var p1q1q2 = _orientation(p1, q1, q2);
-    var p2q2p1 = _orientation(p2, q2, p1);
-    var p2q2q1 = _orientation(p2, q2, q1);
-    if (p1q1p2 == null || p1q1q2 == null || p2q2p1 == null || p2q2q1 == null) {
-        // assuming parallel segments don't intersect
-        return false;
-    }
-    if (p1q1p2 * p1q1q2 > 0) {
-        return false;
-    } else if(p2q2p1 * p2q2q1 > 0) {
-        return false;
-    }
-    return true;
-}
-
-
-function pointInShape(pt, shape) {
-    var randomPt = new Point(0, 0);
-    var numIntersect = 0;
-    for (var i=0; i<shape.points.length - 1; i++) {
-        var intsct = intersects(shape.points[i], shape.points[i+1], pt, randomPt);
-        if (intsct) {
-            numIntersect ++;
-        }
-    }
-    if (numIntersect % 2 == 0) {
-        return false;
-    } else {
-        return true;
-    }
-}
-
-
 function MeshCreator() { 
     // contains function for creating mesh
 
@@ -132,6 +16,9 @@ function MeshCreator() {
         var mesh = self.tri.toMeshNaive(shape);
     }
 
+    this.drawNaiveMesh = function() {
+        self.tri.drawMesh();
+    }
 }
 
 
@@ -140,15 +27,17 @@ function Triangulation() {
 
     this.scanDist = 20;
 
-    this.edgeSize = 20;
+    this.edgeSize = 10;
     this.height = this.edgeSize / 2 * Math.sqrt(3);
+
+    this.maxTriangles = 1000;
 
     this.mesh = null;
 
     this.toMeshNaive = function(shape) {
         // A shape should be a contour consists of a list of points.
-        // If the first point is not equal to the last, one line will be drawn 
-        // between them.
+        // For a contour, the first point must equat the last point
+        // TODO: maybe this assumption is wrong, or not useful
 
         // Find a seed point that's inside the shape.
         // First: start at top middle point
@@ -190,6 +79,7 @@ function Triangulation() {
 
         var edgeToGrow = new Array();
         var seenEdges = new Array();
+        var surfaceEdges = new Array();
 
         // always have the edge in the clockwise order
         edgeToGrow.push(new LineSeg(seedTri.points[0], seedTri.points[1]));
@@ -199,12 +89,12 @@ function Triangulation() {
         seenEdges.push(edgeToGrow[1]);
         seenEdges.push(edgeToGrow[2]);
         var count = 0;
-        while (edgeToGrow.length > 0 && count < 500) {
+        while (edgeToGrow.length > 0 && count < self.maxTriangles) {
             var curEdge = edgeToGrow[0];
-            curEdge.draw();
             edgeToGrow.shift();
             var newPt = self.getThridPoint(curEdge);
             if (!pointInShape(newPt, shape)) {
+                surfaceEdges.push(curEdge);
                 continue;
             }
             var newTri = new Triangle(curEdge.p0, newPt, curEdge.p1);
@@ -214,7 +104,6 @@ function Triangulation() {
                 // (TODO) Make this fast
                 if (seenEdges[i].equals(line0)) {
                     line0 = null
-                    console.log('skipping linie0')
                     break;
                 }
             }
@@ -222,7 +111,6 @@ function Triangulation() {
                 // (TODO) Make this fast
                 if (seenEdges[i].equals(line1)) {
                     line1 = null
-                    console.log('skipping linie1')
                     break;
                 }
             }
@@ -236,23 +124,79 @@ function Triangulation() {
             }
             if (line0 != null ||line1 != null) {
                 self.mesh.push(newTri);
-                newTri.draw();
             }
             count ++;
         }
         console.log(self.mesh.length);
+
+        // sort the surfaceEdges into a contour
+        surfaceContour = _to_contour(surfaceEdges);
+        
+        // for each line segment in surfaceEdges, find the closest point
+        // in the contour, and form a triangle with it.
+        var contourPoints = new Array();
+        var lastPt = null;
+        var firstPt = null;
+        for (var i=0; i<surfaceContour.length; i++) {
+            var pt = closestPoint(surfaceContour[i], shape.points);
+            contourPoints.push(pt);
+            if (lastPt != null) {
+                var t = new Triangle(pt, lastPt, surfaceContour[i].p0);
+                self.mesh.push(t);
+            }
+            else {
+                firstPt = pt;
+            }
+            lastPt = pt;
+            // TODO: keep these triangles the same orientation (clockwise)
+            // as the internal ones
+            var tri = new Triangle(pt, surfaceContour[i].p0, surfaceContour[i].p1);
+            self.mesh.push(tri);
+        }
+        var t = new Triangle(lastPt, firstPt, surfaceContour[0].p0);
+        self.mesh.push(t);
+        
+        for (var i=0; i<surfaceEdges.length; i++) {
+            surfaceEdges[i].draw('#0000ff');
+        }
     }
 
-    this.sqrt3 = Math.sqrt(3);
+    
+    this._sqrt3 = Math.sqrt(3);
 
     this.getThridPoint = function(line) {
         var midx = (line.p0.x + line.p1.x) / 2.0;
         var midy = (line.p0.y + line.p1.y) / 2.0;
-        var orix = (line.p1.y - line.p0.y) / 2.0 * self.sqrt3;
-        var oriy = (line.p0.x - line.p1.x) / 2.0 * self.sqrt3;
+        var orix = (line.p1.y - line.p0.y) / 2.0 * self._sqrt3;
+        var oriy = (line.p0.x - line.p1.x) / 2.0 * self._sqrt3;
         return new Point(midx + orix, midy + oriy);
     }
+
+    this.drawMesh = function() {
+        for (var i=0; i<self.mesh.length; i++) {
+            self.mesh[i].draw();
+        }
+    }
 }
+
+
+function _to_contour(lines) {
+    // start with the first line
+    var contour = new Array();
+    contour.push(lines[0]);
+    var last_line = lines[0];
+    while (contour.length < lines.length) {
+        for (var i = 1; i < lines.length; i ++) {
+            if (last_line.p1.equals(lines[i].p0)) {
+                contour.push(lines[i]);
+                last_line = lines[i];
+                break;
+            }
+        }
+    }
+    return contour;
+}
+
 
 function BasicMesh() {
     // Basics equilateral triangles
@@ -321,12 +265,12 @@ function BasicMesh() {
                     self.triangles.push(t2);
 
                     // add neighbors
-                    adjacent(t1, t2);
+                    t1.adjacentTo(t2, true);
                     if (x > 0) {
-                        adjacent(t1, self.triangles[self.triangles.length - 2]);
+                        t1.adjacentTo(self.triangles[self.triangles.length - 2], true);
                     }
                     if (y > 0) {
-                        adjacent(t1, self.triangles[self.triangles.length - nHorizontal*2 - 1])
+                        t1.adjacentTo(self.triangles[self.triangles.length - nHorizontal*2 - 1], true);
                     }
                 }
             } else {
@@ -345,11 +289,11 @@ function BasicMesh() {
                     self.triangles.push(t2);
 
                     // add neighbors
-                    adjacent(t1, t2);
+                    t1.adjacentTo(t2, true);
                     if (x > 0) {
-                        adjacent(t1, self.triangles[self.triangles.length - 2]);
+                        t1.adjacentTo(self.triangles[self.triangles.length - 2], true);
                     }
-                    adjacent(t2, self.triangles[self.triangles.length - nHorizontal*2])
+                    t2.adjacentTo(self.triangles[self.triangles.length - nHorizontal*2], true)
                 }
             }
         }

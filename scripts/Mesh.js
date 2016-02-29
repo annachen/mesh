@@ -1,3 +1,4 @@
+// Mesh.js: entry file of the project
 
 function initDisplay() {
 

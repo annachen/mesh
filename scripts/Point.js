@@ -1,12 +1,4 @@
 
-function epsEquals(x, y, eps) {
-    if (Math.abs(x - y) < eps) {
-        return true;
-    }
-    return false;
-}
-
-
 function Point(x, y) {
     var self = this;
     this.x = x;
@@ -21,6 +13,11 @@ function Point(x, y) {
             return true;
         }
         return false;
+    }
+
+    this.distTo = function(p) {
+        return Math.sqrt((self.x - p.x) * (self.x - p.x) +
+                         (self.y - p.y) * (self.y - p.y));
     }
 
     this.draw = function(style) {
